@@ -1,0 +1,14 @@
+@endpoint = http://localhost:5001
+
+POST {{endpoint}}/addBlock
+Content-Type: application/json
+
+{
+    "location": "Stockholm",
+    "name": "My Space"
+}
+###
+
+GET {{endpoint}}/host
+Content-Type: application/json
+

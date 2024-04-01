@@ -1,11 +1,18 @@
 version: '3'
 services:
-  flask-app:
+  flask-app1:
     build: .
     ports:
-      - "5001:5000"
-    volumes:
-      - .:/app
+      - "5001:5001"
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
+      NODE_ID: 1
+  flask-app2:
+    build: .
+    ports:
+      - "5002:5001"
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      NODE_ID: 2

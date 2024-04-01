@@ -1,50 +1,78 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
+import requests
+import os
+import json
+import socket
+import pickle
+import threading
+from utils import initialize_node, merge_chains
 
 app = Flask(__name__)
 
-# Sample data
-books = [
-    {"id": 1, "title": "Book 1", "author": "Author 1"},
-    {"id": 2, "title": "Book 2", "author": "Author 2"},
-    {"id": 3, "title": "Book 3", "author": "Author 3"}
-]
+os.environ['NODE_ID'] = '1' # Remove later
+PEER_NODES = ['flask_app2']
+node = initialize_node()
 
-# Endpoint to get all books
-@app.route('/books', methods=['GET'])
-def get_books():
-    return jsonify(books)
+@app.route('/addBlock', methods=['POST'])
+def add_block():
+    data = request.json
+    node.blockchain.add_block(data)
 
-# Endpoint to get a specific book by its id
-@app.route('/books/<int:book_id>', methods=['GET'])
-def get_book(book_id):
-    book = next((book for book in books if book['id'] == book_id), None)
-    if book:
-        return jsonify(book)
-    else:
-        return jsonify({"error": "Book not found"}), 404
+    # for peer in PEER_NODES:
+    #     requests.post(
+    #         f'http://{peer}:5001/gossip', 
+    #         data={
+    #         "origin": socket.gethostname()
+    #         }, 
+    #         files={'node.pkl': pickle.dumps(node)}
+    #     )
 
-# Endpoint to add a new book
-@app.route('/books', methods=['POST'])
-def add_book():
-    new_book = request.json
-    books.append(new_book)
-    return jsonify({"message": "Book added successfully"}), 201
+    return jsonify({
+        "message": "Data received successfully",
+        "length": len(node.blockchain.chain)
+        }), 200
 
-# Endpoint to update an existing book
-@app.route('/books/<int:book_id>', methods=['PUT'])
-def update_book(book_id):
-    book = next((book for book in books if book['id'] == book_id), None)
-    if not book:
-        return jsonify({"error": "Book not found"}), 404
-    book.update(request.json)
-    return jsonify({"message": "Book updated successfully"})
+@app.route('/gossip', methods=['POST'])
+def get_gossip():
+    data = request.json
+    origin = data['origin']
 
-# Endpoint to delete a book
-@app.route('/books/<int:book_id>', methods=['DELETE'])
-def delete_book(book_id):
-    global books
-    books = [book for book in books if book['id'] != book_id]
-    return jsonify({"message": "Book deleted successfully"})
+    if 'node.pkl' in request.files:
+        # Read the pickle file from the request
+        node_bytes = request.files['node.pkl'].read()
+        peer_node = pickle.loads(node_bytes)
 
-# if __name__ == '__main__':
-#     app.run(debug=True)
+        # Merge the peer's chain with our chain
+        threading.Thread(target=merge_chains, args=(node.blockchain, peer_node.blockchain.chain)).start()
+        # merge_chains(node.blockchain, peer_node.blockchain.chain)
+
+    return jsonify({
+        "message": "Gossip received successfully"
+        }), 200
+
+@app.route('/getNode', methods=['GET'])
+def get_node():
+    return send_file(
+        io.BytesIO(pickle.dumps(node)),
+        as_attachment=True,
+        attachment_filename='node.pkl',
+        mimetype='application/octet-stream'
+    )
+
+@app.route('/host', methods=['GET'])
+def get_host():
+    hostname = socket.gethostname()
+    result = requests.get(
+            f'http://flask-app2:5001/hello'
+        )
+    print(result.json())
+    return jsonify({
+        "message": hostname,
+        "result": result.json()
+        }), 200
+
+@app.route('/hello', methods=['GET'])
+def hello():
+    return jsonify({
+        "message": "Hello World"
+        }), 200

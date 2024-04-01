@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request, send_file
 import requests
 import os
+import io
 import json
-import socket
 import pickle
 import threading
 from utils import initialize_node, merge_chains
@@ -10,7 +10,8 @@ from utils import initialize_node, merge_chains
 app = Flask(__name__)
 
 os.environ['NODE_ID'] = '1' # Remove later
-PEER_NODES = ['flask_app2']
+PEER_NODES = ['flask-app2']
+SELF = 'flask-app1'
 node = initialize_node()
 
 @app.route('/addBlock', methods=['POST'])
@@ -18,14 +19,14 @@ def add_block():
     data = request.json
     node.blockchain.add_block(data)
 
-    # for peer in PEER_NODES:
-    #     requests.post(
-    #         f'http://{peer}:5001/gossip', 
-    #         data={
-    #         "origin": socket.gethostname()
-    #         }, 
-    #         files={'node.pkl': pickle.dumps(node)}
-    #     )
+    for peer in PEER_NODES:
+        requests.post(
+            f'http://{peer}:5001/gossip', 
+            data={
+            "origin": SELF
+            }, 
+            files={'node.pkl': pickle.dumps(node)}
+        )
 
     return jsonify({
         "message": "Data received successfully",
@@ -34,13 +35,11 @@ def add_block():
 
 @app.route('/gossip', methods=['POST'])
 def get_gossip():
-    data = request.json
-    origin = data['origin']
-
     if 'node.pkl' in request.files:
-        # Read the pickle file from the request
-        node_bytes = request.files['node.pkl'].read()
-        peer_node = pickle.loads(node_bytes)
+        file = request.files['node.pkl']
+        file_content = file.read()
+        peer_node = pickle.loads(file_content)
+        origin = request.form.get('origin')
 
         # Merge the peer's chain with our chain
         threading.Thread(target=merge_chains, args=(node.blockchain, peer_node.blockchain.chain)).start()
@@ -55,24 +54,38 @@ def get_node():
     return send_file(
         io.BytesIO(pickle.dumps(node)),
         as_attachment=True,
-        attachment_filename='node.pkl',
+        download_name='node.pkl',
         mimetype='application/octet-stream'
     )
 
-@app.route('/host', methods=['GET'])
-def get_host():
-    hostname = socket.gethostname()
-    result = requests.get(
-            f'http://flask-app2:5001/hello'
+@app.route('/file', methods=['GET'])
+def file():
+    requests.post(
+        'http://localhost:5001/send', 
+        files={'node.pkl': pickle.dumps(node)}, 
+        data={
+            "origin": SELF
+            }
         )
-    print(result.json())
     return jsonify({
-        "message": hostname,
-        "result": result.json()
+        "message": "Test successful"
         }), 200
 
-@app.route('/hello', methods=['GET'])
-def hello():
+@app.route('/send', methods=['POST'])
+def send():
+    file = request.files['node.pkl']
+    # Read the file content
+    file_content = file.read()
+
+    # Deserialize the pickled data
+    node = pickle.loads(file_content)
+
+    # Get the origin from the request data
+    origin = request.form.get('origin')
+
+    # Do something with the file and origin
+    print("Received file:", node)
+    print("Origin:", origin)
     return jsonify({
-        "message": "Hello World"
+        "message": "Test successful"
         }), 200

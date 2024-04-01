@@ -9,6 +9,10 @@ Content-Type: application/json
 }
 ###
 
-GET {{endpoint}}/host
+GET {{endpoint}}/hello
+Content-Type: application/json
+###
+
+GET {{endpoint}}/file
 Content-Type: application/json
 

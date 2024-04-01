@@ -8,6 +8,8 @@ services:
       FLASK_APP: app.py
       FLASK_ENV: development
       NODE_ID: 1
+      SELF: flask-app1
+      PEER_NODES: "flask-app2 flask-app3 flask-app4"
   flask-app2:
     build: .
     ports:
@@ -16,3 +18,25 @@ services:
       FLASK_APP: app.py
       FLASK_ENV: development
       NODE_ID: 2
+      SELF: flask-app2
+      PEER_NODES: "flask-app1 flask-app3 flask-app4"
+  flask-app3:
+    build: .
+    ports:
+      - "5003:5001"
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      NODE_ID: 3
+      SELF: flask-app3
+      PEER_NODES: "flask-app2 flask-app1 flask-app4"
+  flask-app4:
+    build: .
+    ports:
+      - "5004:5001"
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      NODE_ID: 4
+      SELF: flask-app4
+      PEER_NODES: "flask-app2 flask-app3 flask-app1"

@@ -9,9 +9,8 @@ from utils import initialize_node, merge_chains
 
 app = Flask(__name__)
 
-os.environ['NODE_ID'] = '1' # Remove later
-PEER_NODES = ['flask-app2']
-SELF = 'flask-app1'
+PEER_NODES = os.environ['PEER_NODES'].split()
+SELF = os.environ.get('SELF')
 node = initialize_node()
 
 @app.route('/addBlock', methods=['POST'])
@@ -58,34 +57,33 @@ def get_node():
         mimetype='application/octet-stream'
     )
 
-@app.route('/file', methods=['GET'])
-def file():
-    requests.post(
-        'http://localhost:5001/send', 
-        files={'node.pkl': pickle.dumps(node)}, 
-        data={
-            "origin": SELF
-            }
-        )
+@app.route('/getPeers', methods=['GET'])
+def get_peers():
     return jsonify({
-        "message": "Test successful"
+        "peers": PEER_NODES
         }), 200
 
-@app.route('/send', methods=['POST'])
-def send():
-    file = request.files['node.pkl']
-    # Read the file content
-    file_content = file.read()
-
-    # Deserialize the pickled data
-    node = pickle.loads(file_content)
-
-    # Get the origin from the request data
-    origin = request.form.get('origin')
-
-    # Do something with the file and origin
-    print("Received file:", node)
-    print("Origin:", origin)
+@app.route('/getSelf', methods=['GET'])
+def get_self():
     return jsonify({
-        "message": "Test successful"
+        "self": SELF
         }), 200
+
+@app.route('/getChain', methods=['GET'])
+def get_chain():
+    blockchain_data = []
+
+    for block in node.blockchain.chain:
+        # Convert Block object to dictionary
+        block_data = {
+            'index': block.index,
+            'data': block.data,
+            'previous_hash': block.previous_hash,
+            'nonce': block.nonce,
+            'hash': block.hash
+        }
+        blockchain_data.append(block_data)
+
+    return jsonify({
+        'chain': blockchain_data
+    }), 200

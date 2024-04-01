@@ -9,10 +9,14 @@ Content-Type: application/json
 }
 ###
 
-GET {{endpoint}}/hello
+GET {{endpoint}}/getPeers
 Content-Type: application/json
 ###
 
-GET {{endpoint}}/file
+GET {{endpoint}}/getSelf
 Content-Type: application/json
+###
 
+GET {{endpoint}}/getChain
+Content-Type: application/json
+###

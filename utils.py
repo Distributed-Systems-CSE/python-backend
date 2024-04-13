@@ -1,6 +1,8 @@
+import base64
 import os
 import pickle
-from localchain import Node
+from localchain import Node, Blockchain
+from hashlib import sha256
 
 def initialize_node():
     node_id = os.environ.get('NODE_ID')
@@ -51,3 +53,19 @@ def merge_chains(blockchain, peer_chain):
         for block in blockchain.chain[common_index:]:
             merged_chain.add_block(block.data)
         blockchain = merged_chain
+
+def partition_file(file_path, chunk_size=16 * 1024):
+    partitions = []
+    with open(file_path, 'rb') as f:
+        chunk = f.read(chunk_size)
+        chunk_number = 0
+        while chunk:
+
+            partitions.append({
+                'hash': sha256(chunk).hexdigest(),
+                'data': chunk
+            })
+            chunk_number += 1
+            chunk = f.read(chunk_size)
+
+    return partitions

@@ -1,3 +1,5 @@
+from random import randint
+
 from flask import Flask, jsonify, request, send_file
 import requests
 import os
@@ -5,9 +7,12 @@ import io
 import json
 import pickle
 import threading
+
+import utils
 from utils import initialize_node, merge_chains
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'
 
 PEER_NODES = os.environ['PEER_NODES'].split()
 SELF = os.environ.get('SELF')
@@ -87,3 +92,41 @@ def get_chain():
     return jsonify({
         'chain': blockchain_data
     }), 200
+
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    if 'file' not in request.files:
+        return "No file uploaded!", 400
+    file = request.files['file']
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+    partitions = utils.partition_file(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+
+    fileinfo = {
+        'filename': file.filename,
+        'content-type': file.content_type,
+        'content-length': file.content_length,
+        'chunks-info': []
+    }
+    i = 0
+    for partition in partitions:
+        node = PEER_NODES[randint(0, len(PEER_NODES) - 1)]
+        fileinfo['chunks-info'].append({
+            'index': i,
+            'hash': partition['hash'],
+            'node': node
+        })
+        requests.post(f'http://{node}:5000/uploadChunk', files={partition['hash']: partition['data']})
+        i+=1
+
+    return "OK", 200
+
+
+@app.route('/uploadChunk', methods=['POST'])
+def uploadChunk():
+    if len(request.files) != 1:
+        return "No file uploaded!", 400
+    file = list(request.files.values())[0]
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+    return "OK", 200

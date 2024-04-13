@@ -69,3 +69,7 @@ def partition_file(file_path, chunk_size=16 * 1024):
             chunk = f.read(chunk_size)
 
     return partitions
+
+def write_partition(file_path, chunk):
+    with open(file_path, 'wb') as f:
+        f.write(chunk)

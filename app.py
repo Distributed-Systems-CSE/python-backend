@@ -12,6 +12,7 @@ import utils
 from utils import initialize_node, merge_chains
 
 app = Flask(__name__)
+app.logger.setLevel('INFO')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
 PEER_NODES = os.environ['PEER_NODES'].split()
@@ -127,7 +128,7 @@ def upload():
 		if selected_node == SELF:
 			utils.write_partition(os.path.join(app.config['UPLOAD_FOLDER'], partition['hash']), partition['data'])
 		else:
-			requests.post(f'http://{selected_node}:5000/uploadChunk', files={partition['hash']: partition['data']})
+			requests.post(f'http://{selected_node}:5001/uploadChunk', files={partition['hash']: partition['data']})
 		i += 1
 
 	return "OK", 200

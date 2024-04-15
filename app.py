@@ -113,7 +113,6 @@ def upload():
 	fileinfo = {
 		'filename': file.filename,
 		'content-type': file.content_type,
-		'content-length': file.content_length,
 		'chunks-info': []
 	}
 	i = 0
@@ -131,6 +130,7 @@ def upload():
 			requests.post(f'http://{selected_node}:5001/uploadChunk', files={partition['hash']: partition['data']})
 		i += 1
 
+	requests.post(f'http://{SELF}:5001/addBlock', json=fileinfo)
 	return "OK", 200
 
 
@@ -143,3 +143,16 @@ def uploadChunk():
 	app.logger.info(file.filename)
 	file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
 	return "OK", 200
+
+@app.route('/getChunk', methods=['GET'])
+def get_chunk():
+	chunk_hash = request.args.get('hash')
+	if (os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], chunk_hash))):
+		return send_file(
+			os.path.join(app.config['UPLOAD_FOLDER'], chunk_hash),
+			as_attachment=True,
+			download_name=chunk_hash,
+			mimetype='application/octet-stream'
+		)
+	else:
+		return "Chunk not found", 404

@@ -9,6 +9,7 @@ import pickle
 import threading
 
 import utils
+import merkle_tree
 from utils import initialize_node, merge_chains
 
 app = Flask(__name__)
@@ -107,12 +108,16 @@ def upload():
 		return "No file uploaded!", 400
 	file = request.files['file']
 	file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
-	partitions = utils.partition_file(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+	byte_stream = utils.get_file_as_byte_stream(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
 	os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+	merkel_tree = merkle_tree.MerkelTree(byte_stream)
+	partitions = utils.partition_stream(merkel_tree.byte_stream)
 
 	fileinfo = {
 		'filename': file.filename,
 		'content-type': file.content_type,
+		'merkel-tree': merkel_tree.root.get_json(),
+		'padding-length': merkel_tree.padding,
 		'chunks-info': []
 	}
 	i = 0

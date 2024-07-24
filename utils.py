@@ -1,6 +1,8 @@
+import math
 import os
 import pickle
-from localchain import Node
+from localchain import Node, Blockchain
+from hashlib import sha256
 
 def initialize_node():
     node_id = os.environ.get('NODE_ID')
@@ -51,3 +53,34 @@ def merge_chains(blockchain, peer_chain):
         for block in blockchain.chain[common_index:]:
             merged_chain.add_block(block.data)
         blockchain = merged_chain
+
+def get_file_as_byte_stream(file_path):
+    with open(file_path, 'rb') as f:
+        return f.read()
+
+def partition_stream(byte_stream, chunk_size=16 * 1024):
+    partitions = []
+    while byte_stream:
+        chunk = byte_stream[:chunk_size]
+        partitions.append({
+            'hash': sha256(chunk).hexdigest(),
+            'data': chunk
+        })
+        byte_stream = byte_stream[chunk_size:]
+    return partitions
+
+
+def padding_size(byte_stream, chunk_size=16 * 1024):
+    """
+	:param byte_stream:
+	:return: size of padding need to be added.
+	"""
+    chunk_count = math.ceil(len(byte_stream) / chunk_size)
+    # Find the next highest power of 2
+    power_of_2 = 2 ** math.ceil(math.log(chunk_count, 2))
+    padded_size = power_of_2 * chunk_size
+    return padded_size - len(byte_stream)
+
+def write_partition(file_path, chunk):
+    with open(file_path, 'wb') as f:
+        f.write(chunk)

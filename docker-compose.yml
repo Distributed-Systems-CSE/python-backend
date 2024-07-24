@@ -4,39 +4,59 @@ services:
     build: .
     ports:
       - "5001:5001"
+    networks:
+      custom_net:
+        ipv4_address: 10.5.0.2
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
       NODE_ID: 1
       SELF: flask-app1
-      PEER_NODES: "flask-app2 flask-app3 flask-app4"
+      PEER_NODES: "10.5.0.3 10.5.0.4 10.5.0.5"
   flask-app2:
     build: .
     ports:
       - "5002:5001"
+    networks:
+      custom_net:
+        ipv4_address: 10.5.0.3
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
       NODE_ID: 2
       SELF: flask-app2
-      PEER_NODES: "flask-app1 flask-app3 flask-app4"
+      PEER_NODES: "10.5.0.2 10.5.0.4 10.5.0.5"
   flask-app3:
     build: .
     ports:
       - "5003:5001"
+    networks:
+      custom_net:
+        ipv4_address: 10.5.0.4
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
       NODE_ID: 3
       SELF: flask-app3
-      PEER_NODES: "flask-app2 flask-app1 flask-app4"
+      PEER_NODES: "10.5.0.2 10.5.0.3 10.5.0.5"
   flask-app4:
     build: .
     ports:
       - "5004:5001"
+    networks:
+      custom_net:
+        ipv4_address: 10.5.0.5
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
       NODE_ID: 4
       SELF: flask-app4
-      PEER_NODES: "flask-app2 flask-app3 flask-app1"
+      PEER_NODES: "10.5.0.2 10.5.0.3 10.5.0.4"
+
+networks:
+  custom_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1

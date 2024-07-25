@@ -17,9 +17,13 @@ app.logger.setLevel('INFO')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
 PEER_NODES = os.environ['PEER_NODES'].split()
+PEER_PORTS = os.environ['PEER_PORTS'].split()
 SELF = os.environ.get('SELF')
 node = initialize_node()
 
+@app.route('/', methods=['GET'])
+def index():
+	return SELF
 
 @app.route('/addBlock', methods=['POST'])
 def add_block():
@@ -122,11 +126,14 @@ def upload():
 	}
 	i = 0
 	for partition in partitions:
-		selected_node = PEER_NODES[randint(0, len(PEER_NODES) - 1)]
+		n = randint(0, len(PEER_NODES) - 1)
+		selected_node = PEER_NODES[n]
+		selected_node_port = PEER_PORTS[n]
 		fileinfo['chunks-info'].append({
 			'index': i,
 			'hash': partition['hash'],
-			'node': selected_node
+			'node': selected_node,
+			'port': selected_node_port
 		})
 		app.logger.info(f'Sending chunk to Node: {selected_node}')
 		if selected_node == SELF:

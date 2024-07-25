@@ -13,6 +13,7 @@ services:
       NODE_ID: 1
       SELF: flask-app1
       PEER_NODES: "10.5.0.3 10.5.0.4 10.5.0.5"
+      PEER_PORTS: "5002 5003 5004"
   flask-app2:
     build: .
     ports:
@@ -26,6 +27,7 @@ services:
       NODE_ID: 2
       SELF: flask-app2
       PEER_NODES: "10.5.0.2 10.5.0.4 10.5.0.5"
+      PEER_PORTS: "5001 5003 5004"
   flask-app3:
     build: .
     ports:
@@ -39,6 +41,7 @@ services:
       NODE_ID: 3
       SELF: flask-app3
       PEER_NODES: "10.5.0.2 10.5.0.3 10.5.0.5"
+      PEER_PORTS: "5001 5002 5004"
   flask-app4:
     build: .
     ports:
@@ -52,6 +55,7 @@ services:
       NODE_ID: 4
       SELF: flask-app4
       PEER_NODES: "10.5.0.2 10.5.0.3 10.5.0.4"
+      PEER_PORTS: "5001 5002 5003"
 
 networks:
   custom_net:
